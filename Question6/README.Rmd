@@ -1,0 +1,81 @@
+---
+title: "Question 6"
+author: '20903936'
+date: "12/5/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, include=FALSE}
+
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts","timeSeries","fPortfolio","quantmod")
+
+MAA<-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/MAA.rds", refhook = NULL) %>% select(date,Ticker,Price)
+
+msci <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/msci.rds", refhook = NULL)
+```
+
+
+```{r}
+
+# this was not working
+#msci<- msci%>% filter(Name %in% c("MSCI_ACWI", "MSCI_USA", "MSCI_RE", "MSCI_Jap"))
+```
+
+#Introducition
+
+This section is above portfolio construction. Here we had to build a balanced fund using the following criteria: 
+
+- Long-only strategy
+- When using covariance and mean forecasts, use a look-back of less than 3 years;
+- Do not hold any assets with less than 3 years’ returns data;
+- Apply Quarterly Re balancing;
+- Limit exposure to Bonds and credit instruments at 25%;
+- Limit exposure to Equities at 60%;
+- Limit single asset exposure at 40
+
+
+```{r}
+
+#use the esquisse::esquisser(msci) visualise.
+
+library(ggplot2)
+
+ggplot(msci) +
+ aes(x = date, y = Price, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Returns", title = "MSCI indexes", subtitle = "MSCI Return series") +
+ theme_minimal()
+
+
+```
+
+
+```{r}
+#use the esquisse::esquisser(MAA) visualise.
+
+library(ggplot2)
+
+ggplot(MAA) +
+ aes(x = date, y = Price, colour = Ticker) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Price", title = "Global Indexes", caption = "Plot of Global Indexes") +
+ theme_minimal()
+
+```
+
+Lets combine these data sets and try some portfolio construction
+
+```{r}
+
+#colnames(msci)[2] <- "Ticker"
+
+#dataset <- rbind(MAA, msci)
+
+
+```
+
+

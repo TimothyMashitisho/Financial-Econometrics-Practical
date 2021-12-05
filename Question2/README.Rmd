@@ -1,0 +1,304 @@
+---
+title: "Question2"
+author: '20903936'
+date: "12/4/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 6, fig.height = 5, fig.pos="H", fig.pos = 'H')
+
+rm(list=ls())  # clear all variables in current environment
+graphics.off() # clear all plots
+
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
+
+```
+
+
+```{r}
+
+RebDays <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/Rebalance_days.rds", refhook = NULL)
+
+
+T40 <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/T40.rds", refhook = NULL)
+```
+
+
+# Introduction
+
+The aim of this brief report is to compare the methodologies of the SWIX (J400) and the ALSI (J200). To do so we will loook at the performance of  both indexes based on size indexes (large, mid and small caps), sector exposures and stock concentration over time. We will then look at applying capping to the indexes to look at the impact that different capping levels that would have. Specifically we will cap at 6% and 10% in our analysis. 
+
+## Exploratory Data Analaysis
+
+Before doing our analysis we must ensure that our data is correct. 
+
+Our first point of call is ensuring that the J200 and the J400 index weights sum to 1. This is to ensure that our proportions for calculating portfolio returns are correct. And they did sum to 1 and I also checked that there were no NAs. 
+
+Below we also show that our weights of our indexes are log normal returns. This is important as we cannot have negative returns in our index.
+
+```{r}
+
+# Can't have a negative weight in a portfolio
+T40 %>%
+ ggplot() +
+ aes(x = J400) +
+ geom_histogram(bins = 100L, fill = "grey") +
+ labs(x = "J400 returns", 
+ y = "Freq", title = "Histogram of J400 weigths", subtitle = "J400 weights follow log-normal distribution as expected")  +
+ theme_minimal()
+
+```
+
+
+```{r}
+T40 %>%
+ ggplot() +
+ aes(x = J200) +
+ geom_histogram(bins = 200L, fill = "grey") +
+ labs(x = "J200 returns", 
+ y = "Freq", title = "Histogram of J400 returns", subtitle = "J200 weighting follow log-normal distribution") +
+ theme_minimal()
+
+```
+
+Now we need to ensure that the return series includes simple returns and not log returns. We can do so by ensuring that the return profile of the portfolio returns follows a normal distribution. 
+
+```{r}
+#Here we are calculating the 
+
+T40<- T40 %>% group_by(date) %>% 
+              mutate(J200return = J200 * Return,
+              J400return = J400 * Return)
+
+```
+
+
+```{r}
+T40 %>%
+ ggplot() +
+ aes(x = J200return) +
+ geom_histogram(bins = 100L, fill = "blue") +
+ labs(x = "J200 returns", 
+ y = "Freq", title = "Histogram of J200 returns", subtitle = "J200 returns follow normal distribution") +
+ theme_minimal()
+
+```
+
+
+```{r}
+T40 %>%
+ ggplot() +
+ aes(x = J400return) +
+ geom_histogram(bins = 100L, fill = "black") +
+ labs(x = "J400 returns", 
+ y = "Freq", title = "Histogram of J400 returns", subtitle = "J400 returns follow normal distribution") +
+ theme_minimal()
+```
+Wonderful, now that we are sure that our returns are fine, we can now show the performance of the indexes.
+
+Performance by Sector
+
+```{r}
+library(ggplot2)
+
+ggplot(T40) +
+ aes(x = date, y = J200return, colour = Sector) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Time", y = "Return", title = "J200 return by sector" ) +
+ theme_minimal() +
+ facet_wrap(vars(Sector))
+```
+
+
+```{r}
+
+library(ggplot2)
+
+ggplot(T40) +
+ aes(x = date, y = J400return, colour = Sector) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Time", y = "Return", title = "J400 return by sector" ) +
+ theme_minimal() +
+ facet_wrap(vars(Sector))
+```
+
+From the above chart we can see that J200 has more stable returns for industrials. But the J400 has more stable returns for resources. 
+
+
+Now we look at applying capping to the indexes to look at the difference that capping levels have on the J200 and J400.
+
+```{r}
+pacman::p_load(tidyverse)
+pacman::p_load(tbl2xts)
+
+#Turning the dataframe into xts
+T40_xts <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/T40.rds", refhook = NULL)
+
+#T40_xts<- T40_xts %>% tbl_xts()
+```
+
+```{r}
+#Getting my re balance days 
+
+Rebalance_Days <- RebDays %>% filter(Date_Type=="Reb Trade Day")
+
+```
+
+
+```{r}
+rebalance_col_J200 <- T40_xts %>% 
+filter(date %in% Rebalance_Days$date) %>% 
+# Now we have to distinguish re balances - to create something
+# to group by:
+mutate(RebalanceTime = format(date, "%Y%B")) %>% 
+# Now we can group...
+group_by(RebalanceTime) %>% 
+# Now trim down to 30 stocks and reweight so sum(w)=1
+arrange(desc(J200)) %>% 
+top_n(40, J200) %>% 
+mutate(weight = J200/sum(J200)) %>% 
+ungroup() %>% 
+arrange(date) %>% 
+select(-Sector, -Return)
+```
+
+
+```{r}
+rebalance_col_J400 <- T40_xts %>% 
+filter(date %in% Rebalance_Days$date) %>% 
+# Now we have to distinguish re balances - to create something
+# to group by:
+mutate(RebalanceTime = format(date, "%Y%B")) %>% 
+# Now we can group...
+group_by(RebalanceTime) %>% 
+# Now trim down to 30 stocks and reweight so sum(w)=1
+arrange(desc(J200)) %>% 
+top_n(40, J200) %>% 
+mutate(weight = J200/sum(J200)) %>% 
+ungroup() %>% 
+arrange(date) %>% 
+select(-Sector, -Return)
+
+
+
+```
+
+```{r}
+## Uncomment for stepping through function:
+#df_Cons <- rebalance_col_J200 %>% filter(date == first(date))
+# W_Cap = 0.08
+
+#Proportional_Cap_Foo <- function(df_Cons, W_Cap = 0.10){
+  
+  # Let's require a specific form from the user... Alerting when it does not adhere this form
+#  if( !"weight" %in% names(df_Cons)) stop("... for Calc capping to work, provide weight column called 'weight'")
+#  
+ # if( !"date" %in% names(df_Cons)) stop("... for Calc capping to work, provide date column called 'date'")
+  
+#  if( !"Tickers" %in% names(df_Cons)) stop("... for Calc capping to work, provide id column called 'Tickers'")
+
+  # First identify the cap breachers...
+#  Breachers <- 
+ #   df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers)
+  
+  # Now keep track of breachers, and add to #it to ensure they remain at 10%:
+#  if(length(Breachers) > 0) {
+    
+#    while( df_Cons %>% filter(weight > W_Cap) %>% nrow() > 0 ) {
+      
+      
+ #     df_Cons <-
+        
+  #      bind_rows(
+          
+ #         df_Cons %>% filter(Tickers %in% Breachers) %>% mutate(weight = W_Cap),
+          
+ #         df_Cons %>% filter(!Tickers %in% Breachers) %>% 
+ #           mutate(weight = (weight / sum(weight, na.rm=T)) * (1-length(Breachers)*W_Cap) )
+          
+  #      )
+      
+  #    Breachers <- c(Breachers, df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers))
+      
+  #  }
+
+  #  if( sum(df_Cons$weight, na.rm=T) > 1.001 | sum(df_Cons$weight, na.rm=T) < 0.999 | max(df_Cons$weight, na.rm = T) > W_Cap) {
+      
+   #   stop( glue::glue("For the Generic weight trimming function used: the weight trimming causes non unit 
+ #     summation of weights for date: {unique(df_Cons$date)}...\n
+   #   The restriction could be too low or some dates have extreme concentrations...") )
+      
+  #  }
+    
+ # } else {
+    
+ # }
+  
+ # df_Cons
+ # 
+ # }
+  
+
+# Now, to map this across all the dates, we can use purrr::map_df as follows:
+#  Capped_df <- 
+    
+  #  rebalance_col_J200 %>% 
+    # Split our df into groups (where the groups here are the rebalance dates:
+  #  group_split(RebalanceTime) %>% 
+    
+    # Apply the function Proportional_Cap_Foo to each rebalancing date:
+  #  map_df(~Proportional_Cap_Foo(weight, W_Cap = 0.10) ) %>% select(-RebalanceTime)
+  
+# Testing this:
+#Capped_df %>% pull(J200) %>% max(.)
+```
+
+```{r}
+  #apped_df <- 
+    
+ # rebalance_col %>% 
+  #  
+  #  group_split(RebalanceTime) %>% 
+    
+#    map_df(~Proportional_Cap_Foo(., W_Cap = 0.06) ) %>% 
+    
+ #   select(-RebalanceTime)
+
+# Testing this:
+#Capped_df %>% pull(weight) %>% max(.)
+```
+
+Now we will create the index returns 
+
+```{r}
+#wts <- Capped_df %>% tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+#rts <- DAX %>% 
+#filter(Tickers %in% unique(Capped_df$Tickers)) %>% 
+#tbl_xts(cols_to_xts = return, spread_by = Tickers)
+
+#wts[is.na(wts)] <- 0
+
+#rts[is.na(rts)] <- 0
+
+#Idx <- rmsfuns::Safe_Return.portfolio(R = rts, weights = wts, 
+   # lag_weights = T) %>% 
+# Let's make this a tibble:
+#xts_tbl() %>% 
+#rename(capped_Idx = portfolio.returns)
+
+# Let's plot this bugger
+#Idx %>% mutate(Idx = cumprod(1 + capped_Idx)) %>% 
+#ggplot() + 
+#geom_line(aes(date, Idx), color = "steelblue") + 
+#labs(title = "Capped Index Calculation", subtitle = "Try and wrap me in a single function with various parameters?", 
+ #   x = "", y = "") + 
+#fmxdat::theme_fmx()
+```
+
+

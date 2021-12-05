@@ -1,0 +1,102 @@
+---
+title: "README"
+author: '20903936'
+date: "12/5/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+
+#package loading 
+
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
+
+cncy <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/currencies.rds",refhook = NULL)
+
+cncy_Carry <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/cncy_Carry.rds",refhook = NULL)
+
+cncy_value <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/cncy_value.rds",refhook = NULL)
+
+cncyIV <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/cncyIV.rds",refhook = NULL)
+
+bbdxy <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bbdxy.rds",refhook = NULL)
+
+```
+
+# Introduction
+
+This brief report will aim to comment on the following statements using currency data.
+
+- The South African rand (ZAR) has over the past few years been one of the most volatile
+currencies;
+-  The ZAR has generally performed well during periods where G10 currency carry trades
+have been favourable and these currency valuations relatively cheap. Globally, it has been
+one of the currencies that most benefit during periods where the Dollar is comparatively
+strong, indicating a risk-on sentiment.
+
+
+```{r}
+# I used essquisser to make the plots. I had no time left. 
+cncy %>%
+ filter(date >= "2010-02-12" & date <= "2021-10-31") %>%
+ filter(Name %in% c("Brazil_Cncy", "Russia_Cncy", 
+"SouthAfrica_Cncy", "China_Cncy", "India_Cncy")) %>%
+ ggplot() +
+ aes(x = date, y = Price, colour = Name) +
+ geom_line(size = 0.5) +
+ labs(x = "Year", y = "Price", subtitle = "Price", caption = "BRICS currency comparison") +
+ theme_minimal() +
+ theme(legend.position = "left")
+```
+To compare the South African rand relative to other currencies, I used BRICS countries as a comparison. As can be seen above we can not really see much on the volatility, however we can see that Russia and India were depreciating at an alarming rate.
+
+```{r}
+
+cncyIV %>%
+ filter(date >= "2015-02-19" & date <= "2021-10-29") %>%
+ filter(Name %in% c("Brazil_IV", "China_IV",  "India_IV", "SouthAfrica_IV", "Russia_IV")) %>%
+ ggplot() +
+ aes(x = date, y = Price, colour = Name) +
+ geom_line(size = 0.5) +
+ labs(x = "Year", y = "Volatility index of BRICS countries", subtitle = "Volatility comparison of BRICS", caption = "BRICS ", 
+ color = "Colour") +
+ theme_minimal()
+```
+
+The above plot shows however that South Africa rand has been quite volatile over the last few years. This is due to various factors. For instance, in recent time Covid 19 has contributed to volatility. Furthermore, the July riots  also contributed to recent volatility. 
+
+However, volatility prior to 2020 could be attributed to what is now known as the Zuma years. This is when state capture was occuring which add to the volatility in the market.
+
+```{r}
+
+
+ZAR <- cncy %>%filter(Name == "SouthAfrica_Cncy") %>%select(date,Price) 
+colnames(ZAR)[2] <- "SouthAfrica_Cncy"
+colnames(cncy_Carry)[3] <- "DBHVG10U"
+
+temp <- inner_join(cncy_Carry,ZAR, by="date")
+temp <- temp %>% select(-Name)
+```
+
+
+```{r}
+
+p212 <-
+ggplot(data = temp, aes(x = date)) +
+  geom_line(aes(y = scale(DBHVG10U), colour = "DBHVG10U")) +
+  geom_line(aes(y = scale(SouthAfrica_Cncy), colour = "SouthAfrica_Cncy")) +
+  scale_colour_manual("", 
+                      breaks = c("SouthAfrica_Cncy", "DBHVG10U"),
+                      values = c("SouthAfrica_Cncy"="black", "DBHVG10U"="red")) +
+  xlab("Year") + 
+  labs(title="Returns Comparison",
+       subtitle = "Scaled SouthAfrica_Cncy and DBHVG10U")
+
+p212
+```
+The chart above answers the second question. Here I tried to scale the time series returns so that we can see if indeed the Zar performs well during periods where G10 currenct carry trades have been favorable. 
+
+To be honest, the results above seem ambiguous. It almost looks like there is a negative correlation between the two series. 
+

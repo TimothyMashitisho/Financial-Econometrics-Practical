@@ -1,0 +1,151 @@
+---
+title: "Question 1"
+author: '20903936'
+date: "05/12/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())  # clear all variables in current environment
+graphics.off() # clear all plots
+
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
+
+bonds_2y<-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bonds_2y.rds", refhook = NULL)
+
+bonds_10y <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bonds_10y.rds", refhook = NULL)
+
+SA_bonds <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/SA_bonds.rds", refhook = NULL)   
+
+BE_Infl <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/BE_Infl.rds", refhook = NULL)   
+
+usdzar <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/usdzar.rds", refhook = NULL) 
+
+ZA_Infl <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/ZA_Infl.rds", refhook = NULL) 
+
+IV <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/IV.rds", refhook = NULL) 
+   
+```
+
+# Introduction
+
+Yield spreads are financial indicators that tell investors the likelihood of a recession or a recovery in a market. To calculate a yield spread, one can take any longer-term dated bond yield and subtract the shorter term dated bond yield. When analyzing yield spreads, the investor observes the yield spreads and can see if an economy is heading for recession or recovery. When spreads increase, this signifies an increase in risky bond securities being offered to the market to compensate for risks in an economy. As spreads decrease, this usually indicates that an economy is in recovery and fewer rates
+
+In recent times, economists have pointed out that current yield spreads in local South African mid to longer-dated bond yields have since 2020 been the highest in decades. This brief report shows that this is in fact true. 
+
+## Data Analysis
+
+The graph below shows the South African Bond Yields by Maturity. The 10 year bond seems to have been quite stable leading up to 2020. The 2 year and 3 year securities seem to have been on a downward trajectory prior to 2020. It can also be seen that after 2020, the 10 year and the 2 Year bond yields have been trending up. On the other hand the 3 month has been stable.
+
+This graph below shows the first glance at the effects of Covid 19 pandemic on the perceptions of state of the South African economy. The higher yields on the 10 year and 2 year signify the increased compensation required by investors from the bond issuer, the South African government. It is however interesting to see that the 3 Year bod yield has been quite stable. This is interesting because it may mean that in the short term there is some optimism on the state of the South African economy. 
+
+```{r,  include=FALSE}
+```
+
+
+```{r,  include=FALSE}
+g <- ggplot(data = SA_bonds, aes(x =  date)) +
+  geom_line(aes(y = ZA_10Yr, colour = "10 Year")) +
+  geom_line(aes(y = ZA_2Yr, colour = "2 Year")) +
+  geom_line(aes(y = SA_3M, colour = "3 month")) +
+      theme_minimal() +
+  scale_colour_manual("", 
+                      values = c("2 Year"="green", "10 Year"="red", 
+                                 "3 month"="blue")) +
+  xlab(" ") +
+  scale_y_continuous("Bond Yields ", limits = c(-5,20)) + 
+  labs(title="SA Bond Yields")
+```
+
+
+```{r}
+g
+```
+
+Higher yields are often congruent with stronger a currency, especially in emerging markets. As global investors look for yield, country that offer bonds with high yields tend to exhibit strong exchange rates. The below groph supports this.
+
+```{r,  include=FALSE}
+g_curr <- ggplot(data = usdzar, aes(x =  date)) +
+  geom_line(aes(y = Price), size = 0.5) +
+  labs(x = "Year", y = "Price", title = " USD/ZAR level") +
+  theme_minimal()
+```
+
+
+```{r}
+g_curr
+
+```
+The USD?ZAR level has shown some strength over since 2020. Prior to 2020 there was an weakening of the rand, where it reached a R19.08 peak at the beginning of 2020. However since then the rand has shown some strength. This strength can be attributed to various factors, however the higher bond yields have made a contribution, ceteris peribus. 
+
+## SA Bond Yield Spreads
+
+The SA 10 year bond yield spread is shown below and corroborates with the economists assertions. SA bond yields are on an upwards trend in 2020 relative to the past few years. 
+
+
+```{r,  include=FALSE}
+SA_bonds <- SA_bonds %>% dplyr::mutate(TenYs = ZA_10Yr - ZA_2Yr) %>% dplyr::mutate(TwoYs = ZA_2Yr - SA_3M) %>% dplyr::mutate(ThreeMs = SA_3M - ZA_10Yr)
+```
+
+```{r, include=FALSE}
+g1 <- ggplot(data = SA_bonds, aes(x =  date)) +
+  geom_line(aes(y = TwoYs), size = 0.5) +
+  labs(x = "Year", y = "Yield spreads (bps)", title = " 10 Year SA Bond Yield Spread") +
+  theme_minimal()
+```
+
+
+```{r}
+g1
+
+```
+
+```{r,  include=FALSE}
+
+US_bonds_10y <- bonds_10y %>% filter(Name=="US_10Yr")
+
+US_bonds_2Yr <- bonds_2y %>% filter(Name == "US_2yr")
+
+US_bonds <- left_join(US_bonds_2Yr,US_bonds_10y, by="date") %>%  dplyr::mutate(TenYrSpread = Bond_10Yr - Bond_2Yr)
+
+```
+
+Interestingly, the 10 Year Yield spread in the United States is also trending upwards. Prior to 2020 the 10 Year yield spread (shown below) has been declining. However the Covid 19 shock has impacted that trend. 
+
+```{r, include=FALSE}
+g2 <- ggplot(US_bonds) +
+  geom_line(aes(x = date, y = TenYrSpread), size = 0.5, colour = "grey") +
+  labs(x = "Year", y = "Yield spreads (bps)", title = " US 10 Year Yield Spreads") +
+  theme_minimal() +
+    scale_color_manual(values = c("y"="black"))
+```
+
+
+```{r}
+g2
+
+```
+
+The volatility indexes show an interesting picture which tie into the theme of increasing yield spreads. From the graph below, all volatility indexes show similar spikes in 2020 showing the global impact that Covid 19 had on markets. It is evident that the compensation for higher risk on medium to long term bonds is line with the pattern volatility indexes below. Where higher risk has been met with higher yields. 
+
+```{r,include=FALSE}
+
+g_vol <- ggplot(data = IV, aes(x=date, y=Price)) + 
+    geom_line(aes(colour=Name)) +
+    theme_minimal() +
+    labs(title="Volatility Indexs") +
+    facet_wrap(~Name)
+
+
+```
+
+```{r}
+g_vol
+```
+
+
+# Conclusion 
+
+The Covid 19 pandemic has introduced significant  volatility in markets. Furthermore, yield spread metrics show an upwards trend globally as seen by the SA and USA 10 year yield spread. The evidence above is rather worrisome as it seems significant risk has entered the system. Questions on the rebounding post Covid 19 is still a question that many scholars and practitioners keep an keen eye on. This is especially true as stock market performances has been incredible in the passed 18 months. However from the above evidence, it seems that cash may be the best investment in the near term.  

@@ -1,0 +1,170 @@
+---
+title: "README"
+author: '20903936'
+date: "12/4/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Question 3:
+
+In this brief report, I aim to show the JSE the concentration and commonality of returns within the Top 40 index (J200). In order to do so, I will look at using Principal Component Analysis and rolling constituent correlation perspective to illustrate. In my answer I will use stratification of monthly volatility by calculating the J200 index returns and comparing return source concentrations for periods of high volatility only. 
+
+```{r}
+
+# Importing the data
+T40 <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/T40.rds", refhook = NULL)
+```
+
+
+Let begin by stratifying the returns for times during high volatility. 
+
+```{r}
+library(rmsfuns)
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr")
+
+```
+
+
+
+```{r}
+#Here , there is no need to consider before 2008 because the data has already provided for the surviving tickers. Also changed NA to zero because sometimes a a ticker will not make it into the index.
+
+T40 <- T40 %>% group_by(date) %>% dplyr::mutate(Return= coalesce(Return,0)) %>% dplyr::mutate(J200= coalesce(J200,0)) %>% mutate(J200return = J200 * Return) %>% select(-J400)
+```
+
+
+```{r}
+T40 <-
+  
+  T40 %>% group_by(Tickers) %>% 
+  
+  mutate(Top = quantile(J200return, 0.99), Bot = quantile(J200return, 0.01)) %>% 
+  
+  mutate(Return = ifelse(J200return> Top, Top, 
+                         
+                         ifelse(J200return < Bot, Bot, J200return))) %>% ungroup() %>%  mutate(YearMonth = format(date, "%Y%B"))
+
+
+```
+
+
+```{r}
+T40SD <-T40  %>% 
+  
+  mutate(YearMonth = format(date, "%Y%B")) %>% 
+  
+  group_by(YearMonth) %>% summarise(SD = sd(J200return)*sqrt(52)) %>% 
+  
+  # Top Decile Quantile overall (highly volatile month for ZAR:
+  mutate(TopQtile = quantile(SD, 0.8),
+         
+         BotQtile = quantile(SD, 0.2))
+```
+
+
+```{r}
+Hi_Vol <- T40SD %>% filter(SD > TopQtile) %>% pull(YearMonth)
+
+Low_Vol <- T40SD %>% filter(SD < BotQtile) %>% pull(YearMonth)
+```
+
+```{r}
+# Create generic function to compare performance:
+
+Perf_comparisons <- function(Idxs, YMs, Alias){
+  # For stepping through uncomment:
+  YMs <- Hi_Vol
+  
+  Unconditional_SD <- 
+    
+  Idxs %>% 
+    
+    group_by(Tickers) %>% 
+    
+    mutate(Full_SD = sd(Return) * sqrt(252)) %>% 
+    
+    filter(YearMonth %in% YMs) %>% 
+    
+    summarise(SD = sd(Return) * sqrt(252), across(.cols = starts_with("Full"), .fns = max)) %>% 
+    
+    arrange(desc(SD)) %>% mutate(Period = Alias) %>% 
+    
+    group_by(Tickers) %>% 
+    
+    mutate(Ratio = SD / Full_SD)
+    
+    Unconditional_SD
+  
+}
+```
+
+
+```{r}
+#Extract the Tickers with monthly high volatility
+
+perf_hi <- Perf_comparisons(T40, YMs = Hi_Vol, Alias = "High_Vol")
+
+perf_lo <- Perf_comparisons(T40, YMs = Low_Vol, Alias = "Low_Vol")
+
+```
+
+PCA Analysis:
+
+
+```{r}
+#Removing rows with missing values 
+
+perf_hi <-na.omit(perf_hi)
+
+```
+
+
+Mean centering J200returns 
+```{r}
+
+T40_Centered <-T40 %>% group_by(Tickers) %>% mutate(J200return_centered = J200return  - 
+    mean(J200return)) %>% ungroup()
+```
+
+
+Here we are only interested in Hi volatility periods as stratified above.
+
+```{r}
+
+pacman::p_load(fEcofin)
+
+# prcomp requires wide, numeric data:
+
+data_wide <- T40_Centered %>% filter(T40_Centered$Tickers %in% perf_hi$Tickers) %>% dplyr::mutate(Return= coalesce(Return,0))  %>% select(date, Tickers, J200return_centered) %>% spread(Tickers, 
+    J200return_centered) %>% select(-date)
+
+
+# make sure to account for only those in portfolio
+temp<-data_wide[, colSums(is.na(data_wide)) != nrow(data_wide)]
+
+data_wide <- temp %>%
+    mutate(
+        across(everything(), replace_na, 0)
+    )
+
+pca <- prcomp(data_wide)
+# We have already cebtered our data, but we could also use
+# these built in measures: prcomp(data_wide, center = TRUE,
+# scale. = TRUE)
+
+```
+
+
+```{r}
+
+plot(pca, type = "l")
+```
+
+
+```{r}
+summary(pca)
+```
+AS can be seen in the skree plot above, the elbow of the plot is at 2. This means that there are 2 componants in the high volatility periods that can explain the sources of returns. 
+

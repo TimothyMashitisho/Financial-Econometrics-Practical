@@ -1,0 +1,135 @@
+---
+title: "Question 5"
+author: '20903936'
+date: "12/5/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+msci <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/msci.rds", refhook = NULL)
+
+
+bonds_10yr <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bonds_10y.rds", refhook = NULL)
+
+comms <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/comms.rds", refhook = NULL)
+
+bonds_2yr <-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bonds_2y.rds", refhook = NULL)
+
+```
+
+# Introduction
+
+My task in this report is to use the MSCI total return profiles as well as bond and comodity return profiles to show that these returns are converging.
+
+The graph below shows the MCSI indexes plot or returns.
+
+```{r, include=FALSE}
+library(ggplot2)
+
+g100 <- ggplot(msci) +
+ aes(x = date, y = Price, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Returns", title = "MCSI Index Plot", caption = "MCSI indexes plot of returns") +
+ theme_minimal()
+```
+
+
+```{r}
+g100
+```
+
+THe plot shows that there are a variety of indexes in the dataset. It may be necessary to only select those variables that are country or region specific to create a reasonable comparisons between returns across asset classes.
+
+```{r, include=FALSE}
+
+g200<-ggplot(comms) +
+ aes(x = date, y = Price, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Return", title = "Commodities Returns", subtitle = "Showing commodity prices") +
+ theme_minimal()
+```
+
+
+```{r}
+g200
+```
+The above plot shows the 
+ 
+
+```{r, include=FALSE}
+
+g300 <- bonds_10yr %>% filter(Name == "CHINA_10Yr") %>% ggplot() +
+ aes(x = date, y = Bond_10Yr, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Yields", title = "10 Year bond Yields", subtitle = "Showing all the 10 Year", 
+ caption = "Showing all the data in the data set") +
+ theme_minimal()
+```
+
+
+To illustrate the above tasks. I will use use Chinesse assets to show 
+
+```{r}
+g300
+
+```
+
+
+```{r, include=FALSE}
+# China msci return 
+
+China_ret <- msci %>% filter(Name=="MSCI China") %>% arrange(date) %>% mutate(china_msci_ret = Price/lag(Price) - 1)
+
+
+g400 <- China_ret %>% ggplot() +
+ aes(x = date, y = china_msci_ret, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Return", title = "MSCI China Return", subtitle = "Showing all the 10 Year", 
+ caption = "Showing all the data in the data set") +
+ theme_minimal()
+```
+
+
+```{r}
+g400
+```
+
+
+```{r, include=FALSE}
+#bcom returns
+
+Gold_ret <- comms %>% filter(Name=="Gold")%>% arrange(date) %>% mutate(gold_ret = Price/lag(Price) - 1)
+
+
+g4<- Gold_ret  %>% ggplot() +
+ aes(x = date, y = gold_ret, colour = Name) +
+ geom_line(size = 0.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Year", y = "Price", title = "Gold Returns", subtitle = "Showing all the 10 Year", 
+ caption = "Showing all the data in the data set") +
+ theme_minimal()
+```
+
+
+```{r}
+g4
+
+```
+
+From the above charts there seems to be some convergence in returns. This is a very interesting result as it may mean that investors a gradually moving into cash or even cryptocurrencies. 
+
+
