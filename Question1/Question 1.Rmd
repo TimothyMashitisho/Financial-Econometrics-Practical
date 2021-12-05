@@ -8,10 +8,21 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-rm(list=ls())  # clear all variables in current environment
-graphics.off() # clear all plots
+
+#rm(list=ls())  # clear all variables in current environment
+#graphics.off() # clear all plots
+
+```
+
+
+```{r setup, include=FALSE}
+
+
+#loading in the packages
 
 pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
+
+#Reading in the various data 
 
 bonds_2y<-readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semester 2/Fin Metrics/Financial Econometrics Practical/data/bonds_2y.rds", refhook = NULL)
 
@@ -39,13 +50,13 @@ In recent times, economists have pointed out that current yield spreads in local
 
 The graph below shows the South African Bond Yields by Maturity. The 10 year bond seems to have been quite stable leading up to 2020. The 2 year and 3 year securities seem to have been on a downward trajectory prior to 2020. It can also be seen that after 2020, the 10 year and the 2 Year bond yields have been trending up. On the other hand the 3 month has been stable.
 
-This graph below shows the first glance at the effects of Covid 19 pandemic on the perceptions of state of the South African economy. The higher yields on the 10 year and 2 year signify the increased compensation required by investors from the bond issuer, the South African government. It is however interesting to see that the 3 Year bod yield has been quite stable. This is interesting because it may mean that in the short term there is some optimism on the state of the South African economy. 
-
-```{r,  include=FALSE}
-```
+This graph shows the first glance at the effects of Covid 19 pandemic on the perceptions of state of the South African economy. The higher yields on the 10 year and 2 year signify the increased compensation required by investors from the bond issuer, the South African government. It is however interesting to see that the 3 Year bod yield has been quite stable. This is interesting because it may mean that in the short term there is some optimism on the state of the South African economy. 
 
 
-```{r,  include=FALSE}
+```{r}
+
+#Here just showing the bond yields as is
+
 g <- ggplot(data = SA_bonds, aes(x =  date)) +
   geom_line(aes(y = ZA_10Yr, colour = "10 Year")) +
   geom_line(aes(y = ZA_2Yr, colour = "2 Year")) +
@@ -57,24 +68,20 @@ g <- ggplot(data = SA_bonds, aes(x =  date)) +
   xlab(" ") +
   scale_y_continuous("Bond Yields ", limits = c(-5,20)) + 
   labs(title="SA Bond Yields")
-```
-
-
-```{r}
+    
 g
 ```
 
 Higher yields are often congruent with stronger a currency, especially in emerging markets. As global investors look for yield, country that offer bonds with high yields tend to exhibit strong exchange rates. The below groph supports this.
 
 ```{r,  include=FALSE}
+#Here I show the dollar rand exhange rate level
+
 g_curr <- ggplot(data = usdzar, aes(x =  date)) +
   geom_line(aes(y = Price), size = 0.5) +
   labs(x = "Year", y = "Price", title = " USD/ZAR level") +
   theme_minimal()
-```
 
-
-```{r}
 g_curr
 
 ```
@@ -86,23 +93,26 @@ The SA 10 year bond yield spread is shown below and corroborates with the econom
 
 
 ```{r,  include=FALSE}
+# Here I calculate the Ten year yield spread with the 2 year as the benchmark
 SA_bonds <- SA_bonds %>% dplyr::mutate(TenYs = ZA_10Yr - ZA_2Yr) %>% dplyr::mutate(TwoYs = ZA_2Yr - SA_3M) %>% dplyr::mutate(ThreeMs = SA_3M - ZA_10Yr)
 ```
 
 ```{r, include=FALSE}
+
+#Here I show the yield spreads. 
+
 g1 <- ggplot(data = SA_bonds, aes(x =  date)) +
   geom_line(aes(y = TwoYs), size = 0.5) +
   labs(x = "Year", y = "Yield spreads (bps)", title = " 10 Year SA Bond Yield Spread") +
   theme_minimal()
-```
 
-
-```{r}
 g1
 
 ```
 
 ```{r,  include=FALSE}
+
+# The US bond yield data is filtered and I left join the two data sets. 
 
 US_bonds_10y <- bonds_10y %>% filter(Name=="US_10Yr")
 
@@ -114,23 +124,22 @@ US_bonds <- left_join(US_bonds_2Yr,US_bonds_10y, by="date") %>%  dplyr::mutate(T
 
 Interestingly, the 10 Year Yield spread in the United States is also trending upwards. Prior to 2020 the 10 Year yield spread (shown below) has been declining. However the Covid 19 shock has impacted that trend. 
 
-```{r, include=FALSE}
+```{r}
+
 g2 <- ggplot(US_bonds) +
   geom_line(aes(x = date, y = TenYrSpread), size = 0.5, colour = "grey") +
   labs(x = "Year", y = "Yield spreads (bps)", title = " US 10 Year Yield Spreads") +
   theme_minimal() +
-    scale_color_manual(values = c("y"="black"))
-```
+    scale_color_manual(values = c("y"="black"))  
 
-
-```{r}
 g2
 
 ```
 
 The volatility indexes show an interesting picture which tie into the theme of increasing yield spreads. From the graph below, all volatility indexes show similar spikes in 2020 showing the global impact that Covid 19 had on markets. It is evident that the compensation for higher risk on medium to long term bonds is line with the pattern volatility indexes below. Where higher risk has been met with higher yields. 
 
-```{r,include=FALSE}
+```{r}
+# Here I show the volatility indexes 
 
 g_vol <- ggplot(data = IV, aes(x=date, y=Price)) + 
     geom_line(aes(colour=Name)) +
@@ -138,11 +147,8 @@ g_vol <- ggplot(data = IV, aes(x=date, y=Price)) +
     labs(title="Volatility Indexs") +
     facet_wrap(~Name)
 
-
-```
-
-```{r}
 g_vol
+
 ```
 
 

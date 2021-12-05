@@ -15,6 +15,8 @@ graphics.off() # clear all plots
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 6, fig.height = 5, fig.pos="H", fig.pos = 'H')
 
+#loading in the packages
+
 pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
 
 ```
@@ -54,6 +56,8 @@ This graph shows the first glance at the effects of Covid 19 pandemic on the per
 
 ```{r}
 
+#Here just showing the bond yields as is
+
 g <- ggplot(data = SA_bonds, aes(x =  date)) +
   geom_line(aes(y = ZA_10Yr, colour = "10 Year")) +
   geom_line(aes(y = ZA_2Yr, colour = "2 Year")) +
@@ -72,7 +76,7 @@ g
 Higher yields are often congruent with stronger a currency, especially in emerging markets. As global investors look for yield, country that offer bonds with high yields tend to exhibit strong exchange rates. The below groph supports this.
 
 ```{r,  include=FALSE}
-
+#Here I show the dollar rand exhange rate level
 
 g_curr <- ggplot(data = usdzar, aes(x =  date)) +
   geom_line(aes(y = Price), size = 0.5) +
@@ -90,10 +94,13 @@ The SA 10 year bond yield spread is shown below and corroborates with the econom
 
 
 ```{r,  include=FALSE}
+# Here I calculate the Ten year yield spread with the 2 year as the benchmark
 SA_bonds <- SA_bonds %>% dplyr::mutate(TenYs = ZA_10Yr - ZA_2Yr) %>% dplyr::mutate(TwoYs = ZA_2Yr - SA_3M) %>% dplyr::mutate(ThreeMs = SA_3M - ZA_10Yr)
 ```
 
 ```{r, include=FALSE}
+
+#Here I show the yield spreads. 
 
 g1 <- ggplot(data = SA_bonds, aes(x =  date)) +
   geom_line(aes(y = TwoYs), size = 0.5) +
@@ -105,6 +112,8 @@ g1
 ```
 
 ```{r,  include=FALSE}
+
+# The US bond yield data is filtered and I left join the two data sets. 
 
 US_bonds_10y <- bonds_10y %>% filter(Name=="US_10Yr")
 
@@ -131,6 +140,7 @@ g2
 The volatility indexes show an interesting picture which tie into the theme of increasing yield spreads. From the graph below, all volatility indexes show similar spikes in 2020 showing the global impact that Covid 19 had on markets. It is evident that the compensation for higher risk on medium to long term bonds is line with the pattern volatility indexes below. Where higher risk has been met with higher yields. 
 
 ```{r}
+# Here I show the volatility indexes 
 
 g_vol <- ggplot(data = IV, aes(x=date, y=Price)) + 
     geom_line(aes(colour=Name)) +

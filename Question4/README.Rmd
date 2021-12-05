@@ -1,5 +1,5 @@
 ---
-title: "README"
+title: "Quesetion 4"
 author: '20903936'
 date: "12/5/2021"
 output:
@@ -7,8 +7,9 @@ output:
   html_document: default
 ---
 
-```{r}
-
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 6, fig.height = 5, fig.pos="H", fig.pos = 'H')
+options(scipen = 999)
 #package loading 
 
 pacman::p_load("tidyr", "tbl2xts","devtools","lubridate", "readr", "PerformanceAnalytics", "ggplot2", "dplyr","tidyverse","xts")
@@ -30,29 +31,33 @@ bbdxy <- readRDS("/Users/mathlogonolomashitisho/Desktop/Economics Masters /Semes
 This brief report will aim to comment on the following statements using currency data.
 
 - The South African rand (ZAR) has over the past few years been one of the most volatile
-currencies;
+currencies
+
 -  The ZAR has generally performed well during periods where G10 currency carry trades
-have been favourable and these currency valuations relatively cheap. Globally, it has been
+have been favorable and these currency valuations relatively cheap. Globally, it has been
 one of the currencies that most benefit during periods where the Dollar is comparatively
 strong, indicating a risk-on sentiment.
 
 
-```{r}
-# I used essquisser to make the plots. I had no time left. 
+```{r, include=FALSE}
+# I used essquisser to make the plot below.
+
 cncy %>%
- filter(date >= "2010-02-12" & date <= "2021-10-31") %>%
+ filter(date >= "2015-02-12" & date <= "2021-10-31") %>%
  filter(Name %in% c("Brazil_Cncy", "Russia_Cncy", 
 "SouthAfrica_Cncy", "China_Cncy", "India_Cncy")) %>%
  ggplot() +
  aes(x = date, y = Price, colour = Name) +
  geom_line(size = 0.5) +
- labs(x = "Year", y = "Price", subtitle = "Price", caption = "BRICS currency comparison") +
+ labs(x = "Year", y = "Price", subtitle = "Brics Country Currency Prices", caption = "Emerging market currency comparison") +
  theme_minimal() +
  theme(legend.position = "left")
 ```
 To compare the South African rand relative to other currencies, I used BRICS countries as a comparison. As can be seen above we can not really see much on the volatility, however we can see that Russia and India were depreciating at an alarming rate.
 
 ```{r}
+
+# In this code chunk I try to narrow into the most recent years using a filter. 
 
 cncyIV %>%
  filter(date >= "2015-02-19" & date <= "2021-10-29") %>%
@@ -61,8 +66,8 @@ cncyIV %>%
  aes(x = date, y = Price, colour = Name) +
  geom_line(size = 0.5) +
  labs(x = "Year", y = "Volatility index of BRICS countries", subtitle = "Volatility comparison of BRICS", caption = "BRICS ", 
- color = "Colour") +
- theme_minimal()
+ color = "Colour")
+
 ```
 
 The above plot shows however that South Africa rand has been quite volatile over the last few years. This is due to various factors. For instance, in recent time Covid 19 has contributed to volatility. Furthermore, the July riots  also contributed to recent volatility. 
@@ -71,32 +76,46 @@ However, volatility prior to 2020 could be attributed to what is now known as th
 
 ```{r}
 
-
 ZAR <- cncy %>%filter(Name == "SouthAfrica_Cncy") %>%select(date,Price) 
-colnames(ZAR)[2] <- "SouthAfrica_Cncy"
+colnames(ZAR)[2] <- "South_Africa_Currency"
 colnames(cncy_Carry)[3] <- "DBHVG10U"
 
-temp <- inner_join(cncy_Carry,ZAR, by="date")
-temp <- temp %>% select(-Name)
+data_temp <- inner_join(cncy_Carry,ZAR, by="date")
+data_temp  <- data_temp  %>% select(-Name)
 ```
 
 
 ```{r}
 
+# Here I plot G10 and South African Currency onto the same graph.
+
 p212 <-
-ggplot(data = temp, aes(x = date)) +
-  geom_line(aes(y = scale(DBHVG10U), colour = "DBHVG10U")) +
-  geom_line(aes(y = scale(SouthAfrica_Cncy), colour = "SouthAfrica_Cncy")) +
+ data_temp %>%  filter(date >= "2015-02-19" & date <= "2021-10-29") %>% ggplot() + aes(x = date) +
+  geom_line(aes(y = DBHVG10U, colour = "DBHVG10U")) +
+  geom_line(aes(y = South_Africa_Currency, colour = "South_Africa_Currency")) +
   scale_colour_manual("", 
-                      breaks = c("SouthAfrica_Cncy", "DBHVG10U"),
-                      values = c("SouthAfrica_Cncy"="black", "DBHVG10U"="red")) +
+                      values = c("South_Africa_Currency"="black", "DBHVG10U"="red")) +
   xlab("Year") + 
   labs(title="Returns Comparison",
-       subtitle = "Scaled SouthAfrica_Cncy and DBHVG10U")
+       subtitle = "South_Africa_Currency and DBHVG10U")
 
 p212
 ```
-The chart above answers the second question. Here I tried to scale the time series returns so that we can see if indeed the Zar performs well during periods where G10 currenct carry trades have been favorable. 
 
-To be honest, the results above seem ambiguous. It almost looks like there is a negative correlation between the two series. 
+```{r}
+p212 <-
+ data_temp %>%  filter(date >= "2015-02-19" & date <= "2021-10-29") %>% ggplot() + aes(x = date) +
+  geom_line(aes(y = scale(DBHVG10U), colour = "DBHVG10U")) +
+  geom_line(aes(y = scale(South_Africa_Currency), colour = "South_Africa_Currency")) +
+  scale_colour_manual("", 
+                      values = c("South_Africa_Currency"="black", "DBHVG10U"="red")) +
+  xlab("Year") + 
+  labs(title="Returns Comparison",
+       subtitle = "Scaled South_Africa_Currency and DBHVG10U")
+
+p212
+```
+
+
+The charts above answers the second question. Here I tried to scale the time series returns so that we can see if indeed the South African Rand performs well during periods where G10 currency carry trades have been favorable. To be honest, the results above seem ambiguous. It almost looks like there is a negative correlation between the two series, but I can not be sure. Therefore I would almost conclude that these two series aren't related at all. 
 
